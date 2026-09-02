@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wortschatz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #status {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Wortschatz</h1>
+  <div id="status">Loading vocabulary...</div>
+  <table id="vocabulary"></table>
+
+  <script>
+    fetch('wortschatz.csv')
+      .then(response => response.text())
+      .then(csv => {
+        const rows = csv.trim().split(/\r?\n/).map(line => {
+          const result = [];
+          let current = '';
+          let insideQuotes = false;
+
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+
+            if (char === '"') {
+              if (insideQuotes && line[i + 1] === '"') {
+                current += '"';
+                i++;
+              } else {
+                insideQuotes = !insideQuotes;
+              }
+            } else if (char === ',' && !insideQuotes) {
+              result.push(current);
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+
+          result.push(current);
+          return result;
+        });
+
+        const table = document.getElementById('vocabulary');
+
+        rows.forEach((row, rowIndex) => {
+          const tr = document.createElement('tr');
+
+          row.forEach(cell => {
+            const element = document.createElement(rowIndex === 0 ? 'th' : 'td');
+            element.textContent = cell;
+            tr.appendChild(element);
+          });
+
+          table.appendChild(tr);
+        });
+
+        document.getElementById('status').textContent =
+          rows.length - 1 + ' vocabulary entries';
+      })
+      .catch(error => {
+        document.getElementById('status').textContent =
+          'Could not load vocabulary.';
+        console.error(error);
+      });
+  </script>
+</body>
+</html>
